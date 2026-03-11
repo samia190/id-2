@@ -43,6 +43,52 @@
         <div class="light-ray light-ray-3"></div>
     </div>
 
+    <!-- Shooting Stars -->
+    <div class="shooting-stars">
+        <div class="shooting-star shooting-star-1"></div>
+        <div class="shooting-star shooting-star-2"></div>
+        <div class="shooting-star shooting-star-3"></div>
+        <div class="shooting-star shooting-star-4"></div>
+        <div class="shooting-star shooting-star-5"></div>
+    </div>
+
+    <!-- Twinkling Star Field -->
+    <div class="star-field">
+        <div class="star-layer star-layer-1"></div>
+        <div class="star-layer star-layer-2"></div>
+        <div class="star-layer star-layer-3"></div>
+    </div>
+
+    <!-- Floating 3D Objects -->
+    <div class="floating-3d-objects">
+        <div class="float-obj float-cube float-obj-1">
+            <div class="cube-face cube-front"></div>
+            <div class="cube-face cube-back"></div>
+            <div class="cube-face cube-left"></div>
+            <div class="cube-face cube-right"></div>
+            <div class="cube-face cube-top"></div>
+            <div class="cube-face cube-bottom"></div>
+        </div>
+        <div class="float-obj float-sphere float-obj-2"></div>
+        <div class="float-obj float-cube float-obj-3">
+            <div class="cube-face cube-front"></div>
+            <div class="cube-face cube-back"></div>
+            <div class="cube-face cube-left"></div>
+            <div class="cube-face cube-right"></div>
+            <div class="cube-face cube-top"></div>
+            <div class="cube-face cube-bottom"></div>
+        </div>
+        <div class="float-obj float-sphere float-obj-4"></div>
+        <div class="float-obj float-ring float-obj-5"></div>
+        <div class="float-obj float-sphere float-obj-6"></div>
+        <div class="float-obj float-ring float-obj-7"></div>
+    </div>
+
+    <!-- Nebula Clouds -->
+    <div class="nebula nebula-1"></div>
+    <div class="nebula nebula-2"></div>
+    <div class="nebula nebula-3"></div>
+
     <!-- Centered Logo with Effects -->
     <div class="logo-center" id="logoCenter">
         <div class="logo-glow-pulse"></div>
@@ -55,6 +101,18 @@
 
     <!-- Canvas for Neon Dust + Particle System -->
     <canvas id="particleCanvas"></canvas>
+
+    <!-- Canvas for Multiverse Evolution Engine -->
+    <canvas id="multiverseCanvas"></canvas>
+
+    <!-- Dimensional Portal Overlay -->
+    <div class="portal-overlay" id="portalOverlay"></div>
+
+    <!-- Quantum Glitch Overlay -->
+    <div class="glitch-overlay" id="glitchOverlay"></div>
+
+    <!-- Phase Transition Flash -->
+    <div class="phase-flash" id="phaseFlash"></div>
 </div>
 
 <!-- Main Application -->
@@ -371,6 +429,7 @@
 <div id="toast" class="toast"></div>
 
 <script src="script.js"></script>
+<script src="multiverse.js"></script>
 
 <!-- Canvas Particles + Parallax + Neon Dust -->
 <script>
@@ -444,6 +503,78 @@
         });
     }
 
+    // Star warp particles (flying from center outward)
+    const warpCount = 60;
+    const warps = [];
+    function createWarp() {
+        var angle = Math.random() * Math.PI * 2;
+        var speed = Math.random() * 1.5 + 0.3;
+        return {
+            x: W / 2,
+            y: H / 2,
+            angle: angle,
+            speed: speed,
+            size: Math.random() * 1.2 + 0.3,
+            alpha: 0,
+            trail: 0,
+            color: colors[Math.floor(Math.random() * colors.length)]
+        };
+    }
+    for (let i = 0; i < warpCount; i++) {
+        var w = createWarp();
+        // Spread initial positions so they don't all start at center
+        var dist = Math.random() * Math.max(W, H) * 0.5;
+        w.x += Math.cos(w.angle) * dist;
+        w.y += Math.sin(w.angle) * dist;
+        w.alpha = Math.random() * 0.4;
+        w.trail = dist * 0.15;
+        warps.push(w);
+    }
+
+    // Comet system
+    var comets = [];
+    var cometTimer = 0;
+
+    // Dense star field (canvas-rendered for thousands of stars)
+    var starCount = 500;
+    var stars = [];
+    for (var s = 0; s < starCount; s++) {
+        stars.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            size: Math.random() * 1.5 + 0.2,
+            alpha: Math.random() * 0.7 + 0.1,
+            twinkle: Math.random() * Math.PI * 2,
+            twinkleSpeed: Math.random() * 0.03 + 0.005,
+            depth: Math.random() * 0.4 + 0.1,
+            driftX: (Math.random() - 0.5) * 0.05,
+            driftY: (Math.random() - 0.5) * 0.03
+        });
+    }
+    function spawnComet() {
+        var startSide = Math.floor(Math.random() * 2); // 0=top, 1=left
+        var sx, sy, angle;
+        if (startSide === 0) {
+            sx = Math.random() * W;
+            sy = -20;
+            angle = Math.PI * 0.15 + Math.random() * Math.PI * 0.2;
+        } else {
+            sx = -20;
+            sy = Math.random() * H * 0.5;
+            angle = Math.PI * -0.1 + Math.random() * Math.PI * 0.3;
+        }
+        comets.push({
+            x: sx, y: sy,
+            speed: Math.random() * 4 + 3,
+            angle: angle,
+            size: Math.random() * 2 + 1.5,
+            tailLength: Math.random() * 80 + 40,
+            life: 1,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            history: []
+        });
+    }
+
     function animateCanvas() {
         ctx.clearRect(0, 0, W, H);
 
@@ -453,6 +584,39 @@
 
         const offsetX = (mouseX - W / 2) / W;
         const offsetY = (mouseY - H / 2) / H;
+
+        // Draw dense star field
+        for (var s = 0; s < starCount; s++) {
+            var st = stars[s];
+            st.twinkle += st.twinkleSpeed;
+            var stAlpha = st.alpha * (0.3 + 0.7 * Math.abs(Math.sin(st.twinkle)));
+
+            st.x += st.driftX;
+            st.y += st.driftY;
+            if (st.x < 0) st.x = W;
+            if (st.x > W) st.x = 0;
+            if (st.y < 0) st.y = H;
+            if (st.y > H) st.y = 0;
+
+            var sx = st.x + offsetX * 8 * st.depth;
+            var sy = st.y + offsetY * 8 * st.depth;
+
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(255, 255, 255, ' + stAlpha + ')';
+            ctx.arc(sx, sy, st.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Add subtle glow to brighter stars
+            if (st.size > 1) {
+                ctx.beginPath();
+                var stGrad = ctx.createRadialGradient(sx, sy, 0, sx, sy, st.size * 3);
+                stGrad.addColorStop(0, 'rgba(200, 210, 255, ' + (stAlpha * 0.3) + ')');
+                stGrad.addColorStop(1, 'rgba(200, 210, 255, 0)');
+                ctx.fillStyle = stGrad;
+                ctx.arc(sx, sy, st.size * 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
 
         // Draw neon dust
         for (let i = 0; i < dustCount; i++) {
@@ -523,6 +687,86 @@
             ctx.fill();
         }
 
+        // Draw star warp streaks
+        for (let i = 0; i < warpCount; i++) {
+            var w = warps[i];
+            var dx = Math.cos(w.angle) * w.speed;
+            var dy = Math.sin(w.angle) * w.speed;
+            w.x += dx;
+            w.y += dy;
+            w.speed += 0.008; // accelerate
+            w.alpha = Math.min(w.alpha + 0.005, 0.5);
+            w.trail = Math.min(w.trail + 0.3, 30);
+
+            // Parallax
+            var wpx = w.x + offsetX * 15;
+            var wpy = w.y + offsetY * 15;
+
+            // Draw trail
+            var tailX = wpx - Math.cos(w.angle) * w.trail;
+            var tailY = wpy - Math.sin(w.angle) * w.trail;
+            ctx.beginPath();
+            ctx.moveTo(tailX, tailY);
+            ctx.lineTo(wpx, wpy);
+            ctx.strokeStyle = w.color + w.alpha + ')';
+            ctx.lineWidth = w.size;
+            ctx.stroke();
+
+            // Head glow
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(255,255,255,' + (w.alpha * 0.8) + ')';
+            ctx.arc(wpx, wpy, w.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Reset if off screen
+            if (w.x < -50 || w.x > W + 50 || w.y < -50 || w.y > H + 50) {
+                warps[i] = createWarp();
+            }
+        }
+
+        // Draw comets
+        cometTimer++;
+        if (cometTimer > 200 + Math.random() * 300) {
+            spawnComet();
+            cometTimer = 0;
+        }
+
+        for (let i = comets.length - 1; i >= 0; i--) {
+            var c = comets[i];
+            c.x += Math.cos(c.angle) * c.speed;
+            c.y += Math.sin(c.angle) * c.speed;
+            c.history.push({ x: c.x, y: c.y });
+            if (c.history.length > c.tailLength) c.history.shift();
+
+            // Draw comet tail
+            for (let j = 0; j < c.history.length; j++) {
+                var t = j / c.history.length;
+                var hx = c.history[j].x + offsetX * 10;
+                var hy = c.history[j].y + offsetY * 10;
+                ctx.beginPath();
+                ctx.fillStyle = c.color + (t * c.life * 0.4) + ')';
+                ctx.arc(hx, hy, c.size * t, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Comet head
+            var chx = c.x + offsetX * 10;
+            var chy = c.y + offsetY * 10;
+            ctx.beginPath();
+            var cGrad = ctx.createRadialGradient(chx, chy, 0, chx, chy, c.size * 6);
+            cGrad.addColorStop(0, 'rgba(255,255,255,' + (c.life * 0.9) + ')');
+            cGrad.addColorStop(0.3, c.color + (c.life * 0.5) + ')');
+            cGrad.addColorStop(1, c.color + '0)');
+            ctx.fillStyle = cGrad;
+            ctx.arc(chx, chy, c.size * 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Remove if off screen
+            if (c.x > W + 100 || c.y > H + 100 || c.x < -100 || c.y < -100) {
+                comets.splice(i, 1);
+            }
+        }
+
         requestAnimationFrame(animateCanvas);
     }
 
@@ -555,6 +799,29 @@
         if (logoCenter) {
             logoCenter.style.transform = 'translate(calc(-50% + ' + (x * 6) + 'px), calc(-50% + ' + (y * 6) + 'px))';
         }
+
+        // Move floating 3D objects
+        var floatObjs = bgAnimation.querySelectorAll('.float-obj');
+        floatObjs.forEach(function(obj, i) {
+            var depth = (i + 1) * 5;
+            obj.style.marginLeft = (x * depth) + 'px';
+            obj.style.marginTop = (y * depth) + 'px';
+        });
+
+        // Move nebula clouds
+        var nebulas = bgAnimation.querySelectorAll('.nebula');
+        nebulas.forEach(function(neb, i) {
+            var depth = (i + 1) * 6;
+            neb.style.marginLeft = (x * depth) + 'px';
+            neb.style.marginTop = (y * depth) + 'px';
+        });
+
+        // Move star field layers
+        var starLayers = bgAnimation.querySelectorAll('.star-layer');
+        starLayers.forEach(function(layer, i) {
+            var depth = (i + 1) * 3;
+            layer.style.transform = 'translate(' + (x * depth) + 'px, ' + (y * depth) + 'px)';
+        });
     });
 
 })();
