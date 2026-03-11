@@ -102,7 +102,7 @@
     });
 
     // --- Generate ID Card & QR ---
-    function generateIDCard(data) {
+    async function generateIDCard(data) {
         // Fill ID card
         document.getElementById('cardSchool').textContent = data.school;
         document.getElementById('cardName').textContent = data.name;
@@ -110,17 +110,34 @@
         document.getElementById('cardClass').textContent = data.cls;
         document.getElementById('cardPhoto').src = data.photo;
 
-        // Build profile URL (exclude photo — too large for QR codes)
-        const profilePayload = {
-            school: data.school,
-            name: data.name,
-            adm: data.adm,
-            cls: data.cls
-        };
-        const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(profilePayload))));
-        // Redirect to dedicated profile.html page when QR is scanned
-        const basePath = window.location.pathname.replace(/\/[^\/]*$/, '/');
-        const profileURL = window.location.origin + basePath + 'profile.html?data=' + encoded;
+        // Save student data to server (including photo) and get short ID
+        let profileURL;
+        try {
+            const resp = await fetch('/api/students', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    school: data.school,
+                    name: data.name,
+                    adm: data.adm,
+                    cls: data.cls,
+                    photo: data.photo
+                })
+            });
+            const result = await resp.json();
+            profileURL = window.location.origin + '/profile.html?id=' + result.id;
+        } catch {
+            // Fallback: use base64 encoded text data (no photo)
+            const profilePayload = {
+                school: data.school,
+                name: data.name,
+                adm: data.adm,
+                cls: data.cls
+            };
+            const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(profilePayload))));
+            const basePath = window.location.pathname.replace(/\/[^\/]*$/, '/');
+            profileURL = window.location.origin + basePath + 'profile.html?data=' + encoded;
+        }
 
         // Generate small QR on card
         const cardQR = document.getElementById('cardQR');

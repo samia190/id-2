@@ -396,45 +396,67 @@
             'use strict';
 
             const params = new URLSearchParams(window.location.search);
-            const encoded = params.get('data');
+            const studentId = params.get('id');
+            const encodedData = params.get('data');
             const loading = document.getElementById('loading');
             const errorState = document.getElementById('errorState');
             const profileCard = document.getElementById('profileCard');
 
-            if (!encoded) {
+            if (!studentId && !encodedData) {
                 loading.style.display = 'none';
                 errorState.style.display = 'block';
                 return;
             }
 
-            try {
-                const json = decodeURIComponent(escape(atob(encoded)));
-                const data = JSON.parse(json);
-
+            function renderProfile(data) {
                 if (!data.name || !data.adm) throw new Error('Invalid data');
 
-                // Fill profile
                 document.getElementById('schoolName').textContent = data.school || 'School';
                 document.getElementById('studentName').textContent = data.name;
                 document.getElementById('admNo').textContent = data.adm;
                 document.getElementById('studentClass').textContent = data.cls || '';
-
-                // Set page title
                 document.title = data.name + ' — Student Profile';
 
-                // Show initials as avatar
-                const initials = data.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-                document.getElementById('photoInitials').textContent = initials;
+                // Show photo if available, otherwise show initials
+                const photoWrap = document.getElementById('photoWrap');
+                if (data.photo) {
+                    const img = document.createElement('img');
+                    img.src = data.photo;
+                    img.alt = data.name;
+                    photoWrap.innerHTML = '';
+                    photoWrap.appendChild(img);
+                } else {
+                    const initials = data.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+                    document.getElementById('photoInitials').textContent = initials;
+                }
 
-                // Show card with a brief delay for the loading animation
                 setTimeout(() => {
                     loading.style.display = 'none';
                     profileCard.style.display = 'block';
                 }, 600);
+            }
 
-            } catch {
-                loading.style.display = 'none';
-                errorState.style.display = 'block';
+            if (studentId) {
+                // Fetch full student data (including photo) from server
+                fetch('/api/students/' + encodeURIComponent(studentId))
+                    .then(r => {
+                        if (!r.ok) throw new Error('Not found');
+                        return r.json();
+                    })
+                    .then(renderProfile)
+                    .catch(() => {
+                        loading.style.display = 'none';
+                        errorState.style.display = 'block';
+                    });
+            } else {
+                // Fallback: decode base64 data from URL (no photo)
+                try {
+                    const json = decodeURIComponent(escape(atob(encodedData)));
+                    renderProfile(JSON.parse(json));
+                } catch {
+                    loading.style.display = 'none';
+                    errorState.style.display = 'block';
+                }
             }
         })();
     </script>
