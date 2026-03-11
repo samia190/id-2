@@ -1,12 +1,25 @@
 const express = require('express');
 const crypto = require('crypto');
+const fs = require('fs');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const DATA_FILE = path.join(__dirname, 'students.json');
 
-// In-memory student store
-const students = new Map();
+// Load students from file on startup
+let students = {};
+try {
+    if (fs.existsSync(DATA_FILE)) {
+        students = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    }
+} catch {
+    students = {};
+}
+
+function saveStudents() {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(students), 'utf8');
+}
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -26,13 +39,14 @@ app.post('/api/students', (req, res) => {
         return res.status(400).json({ error: 'Name and admission number required' });
     }
     const id = crypto.randomBytes(6).toString('hex');
-    students.set(id, { school, name, adm, cls, photo });
+    students[id] = { school, name, adm, cls, photo };
+    saveStudents();
     res.json({ id });
 });
 
 // Retrieve student data by ID
 app.get('/api/students/:id', (req, res) => {
-    const data = students.get(req.params.id);
+    const data = students[req.params.id];
     if (!data) {
         return res.status(404).json({ error: 'Student not found' });
     }
