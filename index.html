@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student QR Code Generator</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <!-- html2canvas for card capture -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <!-- Papa Parse for CSV import -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+
+<!-- Main Application -->
+<div id="appView">
+    <!-- Header -->
+    <header class="app-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-qrcode"></i>
+                    <h1>Student QR Code Generator</h1>
+                </div>
+                <p class="tagline">Generate professional student ID cards with scannable QR codes</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container main-content">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" data-tab="single"><i class="fas fa-user"></i> Single Student</button>
+            <button class="tab" data-tab="bulk"><i class="fas fa-users"></i> Bulk Import</button>
+            <button class="tab" data-tab="records"><i class="fas fa-database"></i> Saved Records</button>
+        </div>
+
+        <!-- Single Student Tab -->
+        <div id="tab-single" class="tab-content active">
+            <div class="two-col">
+                <!-- Form Column -->
+                <div class="form-section">
+                    <div class="card">
+                        <h2><i class="fas fa-edit"></i> Student Information</h2>
+                        <form id="studentForm">
+                            <div class="form-group">
+                                <label for="schoolName"><i class="fas fa-school"></i> School Name</label>
+                                <input type="text" id="schoolName" placeholder="e.g. Kangaru Girls High School" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="studentName"><i class="fas fa-user"></i> Student Full Name</label>
+                                <input type="text" id="studentName" placeholder="e.g. Jane Wanjiku Mwangi" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="admissionNo"><i class="fas fa-id-badge"></i> Admission Number</label>
+                                <input type="text" id="admissionNo" placeholder="e.g. ADM/2024/001" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="studentClass"><i class="fas fa-chalkboard"></i> Class</label>
+                                <input type="text" id="studentClass" placeholder="e.g. Form 3 East" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="studentPhoto"><i class="fas fa-camera"></i> Student Photo</label>
+                                <div class="photo-upload" id="photoUploadArea">
+                                    <input type="file" id="studentPhoto" accept="image/*" hidden>
+                                    <div class="upload-placeholder" id="uploadPlaceholder">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <p>Click or drag to upload photo</p>
+                                        <span>JPG, PNG (Max 2MB)</span>
+                                    </div>
+                                    <img id="photoPreview" src="" alt="" style="display:none;">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-qrcode"></i> Generate QR Code & ID Card
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Preview Column -->
+                <div class="preview-section">
+                    <div class="card">
+                        <h2><i class="fas fa-eye"></i> Preview</h2>
+                        <div id="previewArea" class="preview-placeholder">
+                            <i class="fas fa-id-card"></i>
+                            <p>Fill the form and click generate to preview the student ID card</p>
+                        </div>
+
+                        <!-- ID Card Preview -->
+                        <div id="idCardContainer" style="display:none;">
+                            <div id="idCard" class="id-card">
+                                <div class="id-card-accent-left"></div>
+                                <div class="id-card-main">
+                                    <div class="id-card-header">
+                                        <div class="id-card-crest">
+                                            <i class="fas fa-shield-alt"></i>
+                                        </div>
+                                        <h3 id="cardSchool"></h3>
+                                        <div class="id-card-divider"><span class="divider-diamond"></span></div>
+                                        <p class="id-card-subtitle">STUDENT IDENTITY CARD</p>
+                                    </div>
+                                    <div class="id-card-body">
+                                        <div class="id-card-left">
+                                            <div class="id-card-photo-wrapper">
+                                                <div class="id-card-photo">
+                                                    <img id="cardPhoto" src="" alt="Student">
+                                                </div>
+                                                <div class="photo-frame-corner tl"></div>
+                                                <div class="photo-frame-corner tr"></div>
+                                                <div class="photo-frame-corner bl"></div>
+                                                <div class="photo-frame-corner br"></div>
+                                            </div>
+                                            <div class="id-card-qr">
+                                                <div id="cardQR"></div>
+                                                <span class="qr-label">Scan to Verify</span>
+                                            </div>
+                                        </div>
+                                        <div class="id-card-right">
+                                            <div class="id-card-info">
+                                                <div class="id-field">
+                                                    <span class="id-label"><i class="fas fa-user"></i> Full Name</span>
+                                                    <span class="id-value" id="cardName"></span>
+                                                </div>
+                                                <div class="id-field">
+                                                    <span class="id-label"><i class="fas fa-hashtag"></i> Admission No.</span>
+                                                    <span class="id-value" id="cardAdm"></span>
+                                                </div>
+                                                <div class="id-field">
+                                                    <span class="id-label"><i class="fas fa-graduation-cap"></i> Class</span>
+                                                    <span class="id-value" id="cardClass"></span>
+                                                </div>
+                                            </div>
+                                            <div class="id-card-stamp">
+                                                <i class="fas fa-check-circle"></i>
+                                                <span>VERIFIED</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="id-card-footer">
+                                        <div class="footer-pattern"></div>
+                                        <p><i class="fas fa-info-circle"></i> If found, please return to the school administration</p>
+                                    </div>
+                                </div>
+                                <div class="id-card-accent-right"></div>
+                            </div>
+                        </div>
+
+                        <!-- QR Code Display -->
+                        <div id="qrSection" style="display:none;">
+                            <div class="qr-display">
+                                <h3>Scannable QR Code</h3>
+                                <div id="qrCodeLarge"></div>
+                                <p class="qr-hint">Scan this QR code to view the student profile</p>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div id="actionButtons" class="action-buttons" style="display:none;">
+                            <button class="btn btn-success" id="btnDownloadQR">
+                                <i class="fas fa-download"></i> Download QR (PNG)
+                            </button>
+                            <button class="btn btn-info" id="btnDownloadPDF">
+                                <i class="fas fa-file-pdf"></i> Download ID (PDF)
+                            </button>
+                            <button class="btn btn-secondary" id="btnPrint">
+                                <i class="fas fa-print"></i> Print ID Card
+                            </button>
+                            <button class="btn btn-warning" id="btnSave">
+                                <i class="fas fa-save"></i> Save Record
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Import Tab -->
+        <div id="tab-bulk" class="tab-content">
+            <div class="card">
+                <h2><i class="fas fa-file-csv"></i> Bulk Import from CSV / Excel</h2>
+                <p class="bulk-info">
+                    Upload a CSV file with columns: <strong>SchoolName, StudentName, AdmissionNo, Class</strong>.
+                    Photos can be added individually after import.
+                </p>
+                <div class="bulk-upload-area" id="csvUploadArea">
+                    <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" hidden>
+                    <i class="fas fa-file-upload"></i>
+                    <p>Click or drag to upload CSV file</p>
+                    <span>CSV format supported</span>
+                </div>
+                <button class="btn btn-outline" id="btnDownloadTemplate">
+                    <i class="fas fa-download"></i> Download CSV Template
+                </button>
+                <div id="bulkPreview" style="display:none;">
+                    <h3><i class="fas fa-list"></i> Imported Students</h3>
+                    <div class="table-wrap">
+                        <table id="bulkTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>School</th>
+                                    <th>Student Name</th>
+                                    <th>Admission No.</th>
+                                    <th>Class</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bulkTableBody"></tbody>
+                        </table>
+                    </div>
+                    <button class="btn btn-primary" id="btnGenerateAll">
+                        <i class="fas fa-cogs"></i> Generate All QR Codes & ID Cards
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Saved Records Tab -->
+        <div id="tab-records" class="tab-content">
+            <div class="card">
+                <h2><i class="fas fa-database"></i> Saved Student Records</h2>
+                <div id="noRecords" class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No saved records yet</p>
+                    <span>Generate and save student ID cards to see them here</span>
+                </div>
+                <div id="recordsList" class="records-grid"></div>
+                <div id="recordActions" style="display:none;">
+                    <button class="btn btn-danger" id="btnClearAll">
+                        <i class="fas fa-trash"></i> Clear All Records
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="container">
+            <p>&copy; 2025 Student QR Code Generator. All rights reserved.</p>
+        </div>
+    </footer>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>

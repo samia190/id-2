@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(160deg, #0f2544 0%, #1a365d 50%, #2d4a6f 100%);
+            padding: 20px;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(212,175,55,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(212,175,55,0.06) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .loading .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(212,175,55,0.3);
+            border-top-color: #d4af37;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading p {
+            font-size: 0.95rem;
+            font-weight: 500;
+            opacity: 0.85;
+            letter-spacing: 0.5px;
+        }
+
+        /* Error State */
+        .error-state {
+            text-align: center;
+            color: #ffffff;
+            display: none;
+        }
+
+        .error-state .error-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 18px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .error-state h2 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+        }
+
+        .error-state p {
+            opacity: 0.7;
+            font-size: 0.85rem;
+        }
+
+        /* Profile Card — Landscape */
+        .profile-card {
+            background: #ffffff;
+            border-radius: 18px;
+            overflow: hidden;
+            max-width: 640px;
+            width: 100%;
+            box-shadow:
+                0 4px 6px rgba(0,0,0,0.05),
+                0 12px 28px rgba(0,0,0,0.12),
+                0 28px 56px rgba(0,0,0,0.1);
+            display: none;
+            animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            position: relative;
+        }
+
+        .profile-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                45deg, transparent, transparent 20px,
+                rgba(197,168,104,0.015) 20px, rgba(197,168,104,0.015) 40px
+            );
+            pointer-events: none;
+            z-index: 1;
+            border-radius: 18px;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(24px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .accent-bar {
+            height: 5px;
+            background: linear-gradient(90deg, #1a365d, #c5a868, #d4af37, #c5a868, #1a365d);
+        }
+
+        .card-header {
+            background: linear-gradient(160deg, #0f2544 0%, #1a365d 40%, #1e3a5f 100%);
+            color: #ffffff;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(ellipse at center, rgba(212,175,55,0.08) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .header-crest {
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #d4af37, #c5a868, #b8942e);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 12px rgba(212,175,55,0.4);
+            position: relative;
+            z-index: 2;
+            font-size: 1.1rem;
+        }
+
+        .card-header h1 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            line-height: 1.4;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            flex: 1;
+        }
+
+        .header-divider { display: none; }
+
+        .card-header .subtitle {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(212,175,55,0.85);
+            font-weight: 600;
+            position: relative;
+            z-index: 2;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .card-body {
+            padding: 24px 28px;
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            position: relative;
+            z-index: 2;
+            background: linear-gradient(180deg, #fafbfe 0%, #ffffff 100%);
+        }
+
+        .card-left {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .photo-wrap {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #1a365d;
+            box-shadow:
+                0 0 0 3px rgba(212,175,55,0.25),
+                0 8px 20px rgba(0,0,0,0.1);
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .photo-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-initials {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(160deg, #0f2544 0%, #1a365d 100%);
+            color: #d4af37;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 2.8rem;
+            font-weight: 800;
+        }
+
+        .verified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: linear-gradient(135deg, rgba(212,175,55,0.1), rgba(212,175,55,0.05));
+            color: #8b7a4a;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            border: 1px solid rgba(212,175,55,0.2);
+        }
+
+        .verified-badge::before {
+            content: "✓";
+            font-weight: 800;
+            color: #d4af37;
+        }
+
+        .card-right {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .details {
+            text-align: left;
+        }
+
+        .field {
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            background: #f8f9fc;
+            border-radius: 8px;
+            border-left: 3px solid #d4af37;
+        }
+
+        .field:last-child {
+            margin-bottom: 0;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 0.55rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #8b7a4a;
+            margin-bottom: 3px;
+        }
+
+        .field-value {
+            display: block;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1a365d;
+        }
+
+        .card-footer {
+            background: #f7f8fb;
+            text-align: center;
+            padding: 10px 24px;
+            border-top: 1px solid #eef0f4;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-footer::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                90deg, transparent, transparent 4px,
+                rgba(212,175,55,0.03) 4px, rgba(212,175,55,0.03) 8px
+            );
+            pointer-events: none;
+        }
+
+        .card-footer p {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            .card-header { padding: 12px 16px; gap: 10px; }
+            .card-header h1 { font-size: 0.9rem; }
+            .card-body { flex-direction: column; align-items: center; padding: 20px 18px; }
+            .photo-wrap { width: 100px; height: 100px; }
+            .card-right { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Loading student profile...</p>
+    </div>
+
+    <!-- Error -->
+    <div id="errorState" class="error-state">
+        <div class="error-icon">⚠️</div>
+        <h2>Profile Not Found</h2>
+        <p>This QR code may be invalid or expired.</p>
+    </div>
+
+    <!-- Profile Card -->
+    <div id="profileCard" class="profile-card">
+        <div class="accent-bar"></div>
+        <div class="card-header">
+            <div class="header-crest">🛡️</div>
+            <h1 id="schoolName"></h1>
+            <p class="subtitle">Student Identity Card</p>
+        </div>
+        <div class="card-body">
+            <div class="card-left">
+                <div class="photo-wrap" id="photoWrap">
+                    <div class="photo-initials" id="photoInitials"></div>
+                </div>
+                <div class="verified-badge">Verified Student</div>
+            </div>
+            <div class="card-right">
+                <div class="details">
+                    <div class="field">
+                        <span class="field-label">Student Name</span>
+                        <span class="field-value" id="studentName"></span>
+                    </div>
+                    <div class="field">
+                        <span class="field-label">Admission Number</span>
+                        <span class="field-value" id="admNo"></span>
+                    </div>
+                    <div class="field">
+                        <span class="field-label">Class</span>
+                        <span class="field-value" id="studentClass"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <p>This is an official student identity document</p>
+        </div>
+        <div class="accent-bar"></div>
+    </div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            const params = new URLSearchParams(window.location.search);
+            const encoded = params.get('data');
+            const loading = document.getElementById('loading');
+            const errorState = document.getElementById('errorState');
+            const profileCard = document.getElementById('profileCard');
+
+            if (!encoded) {
+                loading.style.display = 'none';
+                errorState.style.display = 'block';
+                return;
+            }
+
+            try {
+                const json = decodeURIComponent(escape(atob(encoded)));
+                const data = JSON.parse(json);
+
+                if (!data.name || !data.adm) throw new Error('Invalid data');
+
+                // Fill profile
+                document.getElementById('schoolName').textContent = data.school || 'School';
+                document.getElementById('studentName').textContent = data.name;
+                document.getElementById('admNo').textContent = data.adm;
+                document.getElementById('studentClass').textContent = data.cls || '';
+
+                // Set page title
+                document.title = data.name + ' — Student Profile';
+
+                // Show initials as avatar
+                const initials = data.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+                document.getElementById('photoInitials').textContent = initials;
+
+                // Show card with a brief delay for the loading animation
+                setTimeout(() => {
+                    loading.style.display = 'none';
+                    profileCard.style.display = 'block';
+                }, 600);
+
+            } catch {
+                loading.style.display = 'none';
+                errorState.style.display = 'block';
+            }
+        })();
+    </script>
+</body>
+</html>
